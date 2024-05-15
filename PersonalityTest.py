@@ -6,6 +6,9 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 from datetime import datetime
+from PIL import Image, ImageDraw, ImageFont
+import requests
+from io import BytesIO
 
 def calculate_mbti_type(scores):
     mbti_type = ""
@@ -111,18 +114,34 @@ def personality_test():
     "MS": "櫻花鉤吻鮭",
     "CS": "穿山甲",
     }
+    personality_imge ={
+    "TP": "台灣黑熊.png",
+    "MP": "石虎.png",
+    "CP": "獼猴.png",
+    "TS": "梅花鹿.png",
+    "MS": "鮭魚.png",
+    "CS": "穿山甲.png",
+    }
     if 'scores' not in st.session_state:
         st.session_state['scores'] = {i + 1: (0, 0) for i in range(len(questions_info))}  # 初始化 scores
 
     if 'selected_option' not in st.session_state:
         st.session_state['selected_option'] = None
-
+    if 'name' not in st.session_state:
+        st.session_state['name'] = "玩家"
     def next_page():
         st.session_state['page'] += 1 
 
     def go_back():
         st.session_state['page'] -= 1
+    def draw_personality(Type):
 
+        img = Image.open(personality_imge[Type])
+        draw = ImageDraw.Draw(img)
+        font = ImageFont.truetype('./msjhbd.ttc', 50)
+        draw.text((10, 10), st.session_state['name']+"的替身是："+personality_trans[Type], font=font, fill=(0, 0, 0))
+        return img
+   
     st.title("選民的奇妙冒險：找出你的政治替身")
 
     if st.session_state['page'] < len(questions_info):
@@ -154,9 +173,16 @@ def personality_test():
         with col2:
             st.button("下一題", on_click=next_page, use_container_width=True)
 
-    else:
+    elif st.session_state['page'] == len(questions_info):
+        with st.form(key='my_form'):
+            st.session_state['name'] = st.text_input(label='暱稱', placeholder='請輸入暱稱')
+            submit_button = st.form_submit_button(label='Submit')
+
+        if submit_button:
+            next_page()
+    else :
         st.title("測驗結果")
         Type=calculate_mbti_type(st.session_state['scores'])
-        st.write("你的 MBTI 類型是：", personality_trans[Type])  # Assuming you have a function to calculate MBTI type
+        st.image(draw_personality(Type), caption=personality_trans[Type], use_column_width=True)
 
 personality_test()
